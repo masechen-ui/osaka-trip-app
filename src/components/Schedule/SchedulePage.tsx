@@ -95,7 +95,7 @@ const SCHEDULE = [
 
 export default function SchedulePage() {
   const { activeDayIndex, setActiveDayIndex } = useAppStore()
-  const { weatherMap, loading } = useWeather()
+  const { weatherMap, loading, usingGPS } = useWeather()
   const day = useMemo(() => SCHEDULE[activeDayIndex], [activeDayIndex])
   const daysUntil = useMemo(() => Math.max(0, Math.ceil((new Date("2026-05-25").getTime() - new Date().getTime()) / 86400000)), [])
 
@@ -148,7 +148,9 @@ export default function SchedulePage() {
               {wx.outfitTip}
             </div>
             {weatherMap[day.date] && (
-              <div className="text-[10px] text-muted text-right mt-1">即時天氣 · OpenWeatherMap</div>
+              <div className="text-[10px] text-muted text-right mt-1">
+                {usingGPS ? "📍 GPS 即時天氣" : "🗾 城市天氣預報"} · OpenWeatherMap
+              </div>
             )}
           </>
         )}
