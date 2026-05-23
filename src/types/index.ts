@@ -1,4 +1,4 @@
-﻿export type EventCategory = "sight" | "food" | "transport" | "hotel"
+export type EventCategory = "sight" | "food" | "transport" | "hotel"
 
 export interface ScheduleEvent {
   id: string; dayIndex: number; time: string; title: string; category: EventCategory
@@ -20,4 +20,14 @@ export interface ChecklistItem { id: string; label: string; isChecked: boolean; 
 export interface JournalPost {
   id: string; authorId: string; authorName: string; dayIndex: number
   content: string; photoUrls: string[]; createdAt: number; likes: string[]
+}
+export interface FoodItem {
+  id: string
+  name: string
+  area: string
+  category: string
+  priority: "must" | "recommend" | "maybe"
+  note: string
+  visited: boolean
+  createdAt: number
 }

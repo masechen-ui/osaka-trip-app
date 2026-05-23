@@ -4,15 +4,17 @@ import { Toaster } from "react-hot-toast"
 const SchedulePage  = lazy(() => import("./components/Schedule/SchedulePage"))
 const ExpensePage   = lazy(() => import("./components/Expense/ExpensePage"))
 const ChecklistPage = lazy(() => import("./components/Checklist/ChecklistPage"))
+const FoodPage      = lazy(() => import("./components/Food/FoodPage"))
 const InfoPage      = lazy(() => import("./components/Info/InfoPage"))
 const AIToolsPage   = lazy(() => import("./components/AITools/AIToolsPage"))
 
-type Tab = "schedule" | "expense" | "checklist" | "info" | "ai"
+type Tab = "schedule" | "expense" | "checklist" | "food" | "info" | "ai"
 
 const TABS: { id: Tab; emoji: string; label: string }[] = [
   { id: "schedule",  emoji: "📅", label: "行程" },
   { id: "expense",   emoji: "💰", label: "記帳" },
   { id: "checklist", emoji: "✅", label: "清單" },
+  { id: "food",      emoji: "🍜", label: "美食" },
   { id: "info",      emoji: "ℹ️",  label: "資訊" },
   { id: "ai",        emoji: "🤖", label: "AI" },
 ]
@@ -47,6 +49,7 @@ export default function App() {
           {activeTab === "schedule"  && <SchedulePage />}
           {activeTab === "expense"   && <ExpensePage />}
           {activeTab === "checklist" && <ChecklistPage />}
+          {activeTab === "food"      && <FoodPage />}
           {activeTab === "info"      && <InfoPage />}
           {activeTab === "ai"        && <AIToolsPage />}
         </Suspense>

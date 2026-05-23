@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(start *)",
+      "Bash(npm install *)",
+      "Bash(npx playwright *)",
+      "Bash(node \"C:\\\\Users\\\\tockn\\\\AppData\\\\Local\\\\Temp\\\\verify-weather.mjs\")",
+      "Bash(node -e \"require.resolve\\('@playwright/test'\\)\")",
+      "Bash(node -e \"console.log\\(require\\('playwright'\\).chromium\\)\")",
+      "Bash(npm init *)",
+      "Bash(node verify-weather.mjs)",
+      "Bash(npm run *)",
+      "Bash(vercel --prod)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git remote *)",
+      "Bash(git push *)",
+      "Bash(gh repo *)",
+      "Bash(winget install *)",
+      "PowerShell(gh *)",
+      "PowerShell(gh auth *)",
+      "PowerShell(gh repo *)",
+      "Bash(gh auth *)",
+      "PowerShell(Get-Command *)",
+      "PowerShell(Get-Item *)",
+      "PowerShell(Get-ChildItem *)"
+    ]
+  }
+}

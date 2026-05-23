@@ -112,7 +112,7 @@ export default function SchedulePage() {
       )}
 
       {/* Date chips */}
-      <div className="flex gap-2 overflow-x-auto pb-2 mb-4" style={{ scrollbarWidth: "none" }}>
+      <div className="flex justify-center gap-2 pb-2 mb-4">
         {SCHEDULE.map((d, i) => {
           const dow = new Date(d.date).getDay()
           return (
