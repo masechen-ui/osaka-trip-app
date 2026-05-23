@@ -23,7 +23,10 @@
       "Bash(gh auth *)",
       "PowerShell(Get-Command *)",
       "PowerShell(Get-Item *)",
-      "PowerShell(Get-ChildItem *)"
+      "PowerShell(Get-ChildItem *)",
+      "Bash(node verify-weather-local.mjs)",
+      "Bash(taskkill /F /IM node.exe)",
+      "Bash(node -e ' *)"
     ]
   }
 }
