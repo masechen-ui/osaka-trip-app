@@ -26,7 +26,11 @@
       "PowerShell(Get-ChildItem *)",
       "Bash(node verify-weather-local.mjs)",
       "Bash(taskkill /F /IM node.exe)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(npx skills *)",
+      "Bash(npm i *)",
+      "Bash(git config *)",
+      "Bash(git commit *)"
     ]
   }
 }

@@ -53,8 +53,8 @@ export default function InfoPage() {
           </div>
           <div className="flex gap-4 text-white text-[11px] opacity-90">
             <span>捷星 GK55</span>
-            <span>5/29（五）14:50</span>
-            <span>抵達 17:10</span>
+            <span>5/29（五）15:20</span>
+            <span>抵達 17:20</span>
           </div>
         </div>
         <div className="flex mx-4">
@@ -64,8 +64,8 @@ export default function InfoPage() {
         </div>
         <div className="grid grid-cols-3 gap-2 px-4 pb-4">
           <div><div className="text-[9px] text-muted uppercase tracking-wide">航廈</div><div className="text-sm font-medium">T1 抵達</div></div>
+          <div><div className="text-[9px] text-muted uppercase tracking-wide">行李</div><div className="text-sm font-medium">20kg × 1</div></div>
           <div><div className="text-[9px] text-muted uppercase tracking-wide">手提</div><div className="text-sm font-medium text-stamp font-bold">嚴格 7kg</div></div>
-          <div><div className="text-[9px] text-muted uppercase tracking-wide">注意</div><div className="text-sm font-medium">二次秤重</div></div>
         </div>
       </div>
 
