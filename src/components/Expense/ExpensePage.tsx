@@ -1,6 +1,11 @@
-﻿import { useState } from "react"
+import { useState } from "react"
 import { useAppStore } from "../../lib/store"
-import { addExpenseToFirestore, useExpensesSync } from "../../hooks/useFirestore"
+import {
+  addExpenseToFirestore,
+  updateExpenseInFirestore,
+  deleteExpenseFromFirestore,
+  useExpensesSync,
+} from "../../hooks/useFirestore"
 import { useExchangeRate, toTWD, convertCurrency } from "../../hooks/useExchangeRate"
 import type { Expense, ExpenseCategory, Currency } from "../../types"
 import toast from "react-hot-toast"
@@ -13,40 +18,178 @@ const CAT_LABELS: Record<ExpenseCategory, string> = {
 }
 const CUR_SYM: Record<string, string> = { TWD: "NT$", JPY: "¥", USD: "$" }
 
+type FormState = {
+  title: string
+  amount: string
+  currency: Currency
+  category: ExpenseCategory
+  paidBy: string
+}
+
+const EMPTY_FORM: FormState = {
+  title: "", amount: "", currency: "JPY", category: "food", paidBy: "m1",
+}
+
 export default function ExpensePage() {
   useExchangeRate()
   useExpensesSync()
   const { expenses, members, rates } = useAppStore()
+
+  // ── 新增表單 ──────────────────────────────────────────────
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({
-    title: "", amount: "", currency: "JPY" as Currency,
-    category: "food" as ExpenseCategory, paidBy: "m1",
-  })
+  const [form, setForm] = useState<FormState>(EMPTY_FORM)
+
+  // ── 編輯 modal ────────────────────────────────────────────
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
+  const [editForm, setEditForm] = useState<FormState>(EMPTY_FORM)
+
+  // ── 換算器 ───────────────────────────────────────────────
   const [convAmt, setConvAmt] = useState("1000")
   const [convFrom, setConvFrom] = useState("JPY")
   const [convTo, setConvTo] = useState("TWD")
 
-  const convResult = convAmt ? Math.round(convertCurrency(parseFloat(convAmt), convFrom, convTo, rates)) : 0
+  const convResult = convAmt
+    ? Math.round(convertCurrency(parseFloat(convAmt), convFrom, convTo, rates))
+    : 0
   const totalTWD = expenses.reduce((sum, e) => sum + toTWD(e.amount, e.currency, rates), 0)
-  const previewTWD = form.amount ? Math.round(toTWD(parseFloat(form.amount), form.currency, rates)) : null
+  const previewTWD = form.amount
+    ? Math.round(toTWD(parseFloat(form.amount), form.currency, rates))
+    : null
+  const editPreviewTWD = editForm.amount
+    ? Math.round(toTWD(parseFloat(editForm.amount), editForm.currency, rates))
+    : null
 
+  // ── 新增 ─────────────────────────────────────────────────
   async function handleSubmit() {
     if (!form.title || !form.amount) return toast.error("請填寫名稱和金額")
     await addExpenseToFirestore({
-      title: form.title, amount: parseFloat(form.amount),
-      currency: form.currency, category: form.category,
-      paidBy: form.paidBy, splitWith: members.map((m) => m.id),
+      title: form.title,
+      amount: parseFloat(form.amount),
+      currency: form.currency,
+      category: form.category,
+      paidBy: form.paidBy,
+      splitWith: members.map((m) => m.id),
       date: new Date().toISOString().slice(0, 10),
     })
     setShowForm(false)
-    setForm({ title: "", amount: "", currency: "JPY", category: "food", paidBy: "m1" })
+    setForm(EMPTY_FORM)
     toast.success("記帳成功！")
+  }
+
+  // ── 開啟編輯 modal ────────────────────────────────────────
+  function openEdit(e: Expense) {
+    setEditingExpense(e)
+    setEditForm({
+      title: e.title,
+      amount: String(e.amount),
+      currency: e.currency,
+      category: e.category,
+      paidBy: e.paidBy,
+    })
+  }
+
+  // ── 確認編輯 ─────────────────────────────────────────────
+  async function handleUpdate() {
+    if (!editingExpense) return
+    if (!editForm.title || !editForm.amount) return toast.error("請填寫名稱和金額")
+    await updateExpenseInFirestore(editingExpense.id, {
+      title: editForm.title,
+      amount: parseFloat(editForm.amount),
+      currency: editForm.currency,
+      category: editForm.category,
+      paidBy: editForm.paidBy,
+    })
+    setEditingExpense(null)
+    toast.success("已更新！")
+  }
+
+  // ── 刪除 ─────────────────────────────────────────────────
+  async function handleDelete(id: string, title: string) {
+    if (!window.confirm(`刪除「${title}」？`)) return
+    await deleteExpenseFromFirestore(id)
+    toast.success("已刪除")
   }
 
   return (
     <div className="p-4 pb-6">
 
-      {/* Exchange rate + converter */}
+      {/* ── 編輯 Modal ── */}
+      {editingExpense && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
+          onClick={(ev) => { if (ev.target === ev.currentTarget) setEditingExpense(null) }}
+        >
+          <div className="bg-card w-full max-w-lg rounded-t-2xl p-4 pb-8 shadow-2xl">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-journal text-base text-stamp">✏️ 編輯記帳</h3>
+              <button
+                onClick={() => setEditingExpense(null)}
+                className="text-muted text-lg leading-none bg-transparent border-none cursor-pointer"
+              >✕</button>
+            </div>
+
+            <input
+              className="w-full border-[1.5px] border-border rounded-xl p-2 text-sm mb-2 bg-bg focus:outline-none focus:border-accent font-sans text-text"
+              placeholder="支出名稱"
+              value={editForm.title}
+              onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))}
+            />
+            <div className="flex gap-2 mb-1">
+              <input
+                type="number" inputMode="decimal"
+                className="flex-1 border-[1.5px] border-border rounded-xl p-2 text-sm bg-bg focus:outline-none focus:border-accent font-sans text-text"
+                placeholder="金額"
+                value={editForm.amount}
+                onChange={(e) => setEditForm((f) => ({ ...f, amount: e.target.value }))}
+              />
+              <select
+                className="border-[1.5px] border-border rounded-xl px-2 text-sm bg-bg font-sans text-text"
+                value={editForm.currency}
+                onChange={(e) => setEditForm((f) => ({ ...f, currency: e.target.value as Currency }))}
+              >
+                <option value="JPY">¥ JPY</option>
+                <option value="TWD">NT$ TWD</option>
+                <option value="USD">$ USD</option>
+              </select>
+            </div>
+            {editPreviewTWD !== null && editForm.currency !== "TWD" && (
+              <div className="text-xs text-muted mb-2 px-1">≈ NT${editPreviewTWD.toLocaleString()}</div>
+            )}
+
+            {/* Category chips */}
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {(Object.keys(CAT_LABELS) as ExpenseCategory[]).map((cat) => (
+                <button key={cat}
+                  onClick={() => setEditForm((f) => ({ ...f, category: cat }))}
+                  className={`text-xs px-2.5 py-1 rounded-full border-[1.5px] cursor-pointer font-sans transition-colors ${editForm.category === cat ? "bg-accent text-white border-accent" : "bg-bg border-border text-muted"}`}>
+                  {CAT_EMOJI[cat]} {CAT_LABELS[cat]}
+                </button>
+              ))}
+            </div>
+
+            {/* Payer chips */}
+            <div className="text-xs text-muted mb-1">付款人</div>
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {members.map((m) => (
+                <button key={m.id}
+                  onClick={() => setEditForm((f) => ({ ...f, paidBy: m.id }))}
+                  className={`text-xs px-2.5 py-1 rounded-full border-[1.5px] cursor-pointer font-sans transition-colors ${editForm.paidBy === m.id ? "bg-tag-food border-accent-2 text-amber-700" : "bg-bg border-border text-muted"}`}>
+                  {m.nickname}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={handleUpdate}
+              className="w-full bg-stamp text-white rounded-xl py-2 text-sm font-medium border-none cursor-pointer font-sans active:scale-[.98] transition-transform"
+            >
+              確認修改
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── 即時匯率 + 換算器 ── */}
       <div className="bg-card border-[1.5px] border-border rounded-[14px] p-3 mb-3 shadow-card-sm">
         <div className="flex items-center gap-3 flex-wrap mb-2">
           <span className="text-xs text-muted">即時匯率</span>
@@ -85,13 +228,13 @@ export default function ExpensePage() {
         </div>
       </div>
 
-      {/* Total */}
+      {/* ── 合計 ── */}
       <div className="bg-card border-[1.5px] border-border rounded-[14px] p-3 mb-3 shadow-card-sm text-center">
         <div className="text-xs text-muted mb-0.5">台幣合計（估）</div>
         <div className="text-2xl font-bold text-stamp">NT${Math.round(totalTWD).toLocaleString()}</div>
       </div>
 
-      {/* Add button */}
+      {/* ── 新增按鈕 ── */}
       <button
         onClick={() => setShowForm((v) => !v)}
         className="w-full bg-accent text-white rounded-[14px] py-2.5 text-sm font-medium shadow-btn-green active:translate-y-0.5 transition-all mb-3 border-none cursor-pointer font-sans"
@@ -99,7 +242,7 @@ export default function ExpensePage() {
         ＋ 新增記帳
       </button>
 
-      {/* Add form */}
+      {/* ── 新增表單 ── */}
       {showForm && (
         <div className="bg-card border-2 border-border rounded-2xl p-3 mb-3 shadow-card">
           <input
@@ -162,7 +305,7 @@ export default function ExpensePage() {
         </div>
       )}
 
-      {/* List */}
+      {/* ── 明細列表 ── */}
       <h2 className="font-journal text-lg text-stamp mb-3">📋 明細</h2>
       <div className="flex flex-col gap-2">
         {expenses.length === 0 && (
@@ -173,13 +316,18 @@ export default function ExpensePage() {
           const twd = Math.round(toTWD(e.amount, e.currency, rates))
           return (
             <div key={e.id} className="bg-card border-[1.5px] border-border rounded-[12px] p-3 flex items-center gap-3 shadow-card-sm">
+              {/* 分類 icon */}
               <div className="w-8 h-8 bg-bg rounded-[9px] flex items-center justify-center text-base flex-shrink-0">
                 {CAT_EMOJI[e.category]}
               </div>
+
+              {/* 主要資訊 */}
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium truncate">{e.title}</div>
                 <div className="text-[11px] text-muted">{payer?.nickname ?? "?"} · {e.date}</div>
               </div>
+
+              {/* 金額 */}
               <div className="text-right flex-shrink-0">
                 <div className="text-sm font-bold text-accent-2">
                   {CUR_SYM[e.currency]}{e.amount.toLocaleString()}
@@ -187,6 +335,24 @@ export default function ExpensePage() {
                 {e.currency !== "TWD" && (
                   <div className="text-[10px] text-muted">≈NT${twd.toLocaleString()}</div>
                 )}
+              </div>
+
+              {/* 編輯 / 刪除按鈕 */}
+              <div className="flex flex-col gap-1 flex-shrink-0">
+                <button
+                  onClick={() => openEdit(e)}
+                  className="w-7 h-7 flex items-center justify-center rounded-lg bg-bg border-[1.5px] border-border text-sm text-muted active:scale-90 transition-transform cursor-pointer"
+                  aria-label="編輯"
+                >
+                  ✏️
+                </button>
+                <button
+                  onClick={() => handleDelete(e.id, e.title)}
+                  className="w-7 h-7 flex items-center justify-center rounded-lg bg-bg border-[1.5px] border-border text-sm text-muted active:scale-90 transition-transform cursor-pointer"
+                  aria-label="刪除"
+                >
+                  🗑️
+                </button>
               </div>
             </div>
           )

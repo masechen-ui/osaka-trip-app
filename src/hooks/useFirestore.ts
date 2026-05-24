@@ -1,5 +1,5 @@
 ﻿import { useEffect } from "react"
-import { collection, onSnapshot, addDoc, updateDoc, doc, query, orderBy, serverTimestamp } from "firebase/firestore"
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, orderBy, serverTimestamp } from "firebase/firestore"
 import { db } from "../lib/firebase"
 import { useAppStore } from "../lib/store"
 import type { Expense, JournalPost } from "../types"
@@ -16,6 +16,14 @@ export function useExpensesSync() {
 
 export async function addExpenseToFirestore(expense: Omit<Expense, "id">) {
   return addDoc(collection(db, "trips", TRIP_ID, "expenses"), { ...expense, createdAt: serverTimestamp() })
+}
+
+export async function updateExpenseInFirestore(id: string, data: Partial<Omit<Expense, "id">>) {
+  return updateDoc(doc(db, "trips", TRIP_ID, "expenses", id), { ...data })
+}
+
+export async function deleteExpenseFromFirestore(id: string) {
+  return deleteDoc(doc(db, "trips", TRIP_ID, "expenses", id))
 }
 
 export async function toggleChecklistInFirestore(id: string, current: boolean) {
